@@ -23,8 +23,10 @@ class UkWebOpr(View):
         This method is to make a multiprocessing.
         """
         collection_name = db['weather_data']
-        response = requests.get(f"https://www.metoffice.gov.uk/pub/data/weather/uk/climate/datasets/{parameter}/{order}/{country}.txt")
-        collection_name.insert({"country": country, "data": response.text, "order": order, "parameter": parameter})
+        response = requests.get(f"https://www.metoffice.gov.uk/pub/data/weather/uk/climate/datasets/"
+                                f"{parameter}/{order}/{country}.txt")
+        collection_name.insert({"country": country, "data": response.text,
+                                "order": order, "parameter": parameter})
 
     @staticmethod
     def post(request):
@@ -111,18 +113,24 @@ class UkWebOpr(View):
                                                             first_line[i]: list1[1]
                                                         }
                                                     )
+
                     if request.GET.get("years"):
                         for i in pair_wise_list:
                             for _, val in enumerate(i):
-                                if request.GET.get("years") not in years_list:
+                                if int(request.GET.get("years")) not in years_list:
                                     responses.update({data["parameter"]: {
                                         request.GET.get("years"): "No Data Available for this year"}})
                                 elif val == int(request.GET.get("years")):
-                                    responses.update({data["parameter"]:{request.GET.get("years"): i[val]}})
+                                    responses.update({data["country"]:
+                                                          {data["parameter"]:
+                                                               {request.GET.get("years"):
+                                                                    i[val]}}})
                     else:
-                        responses.update({data["parameter"]: UkWebOpr.pagination_func(pair_wise_list,
-                                                                                             number_of_elements_per_page,
-                                                                                             page_number)})
+                        responses.update({data["country"]:
+                                              {data["parameter"]: UkWebOpr.pagination_func(
+                                                  pair_wise_list,
+                                                  number_of_elements_per_page,
+                                                  page_number)}})
                 if not responses:
                     responses.update({"error": "Please check the params"})
             except Exception as e:
@@ -130,7 +138,8 @@ class UkWebOpr(View):
 
         elif create_query_string.get("order") == "date":
             years_list = []
-            first_line = ['year', 'jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec',
+            first_line = ['year', 'jan', 'feb', 'mar', 'apr', 'may', 'jun',
+                          'jul', 'aug', 'sep', 'oct', 'nov', 'dec',
                           'win', 'spr', 'sum', 'aut', 'ann']
             pair_wise_list = []
             mongo_res = collection_name.find(create_query_string)
@@ -163,9 +172,14 @@ class UkWebOpr(View):
                                     responses.update({data["parameter"]: {
                                         request.GET.get("years"): "No Data Available for this year"}})
                                 elif val == request.GET.get("years"):
-                                    responses.update({data["parameter"]: {request.GET.get("years"): pair[val]}})
+                                    responses.update({data["country"]: {{data["parameter"]:
+                                                                             {request.GET.get("years"):
+                                                                                  pair[val]}}}})
                     else:
-                        responses.update({data["parameter"]: UkWebOpr.pagination_func(pair_wise_list, number_of_elements_per_page,page_number)})
+                        responses.update({data["country"]: {
+                            {data["parameter"]: UkWebOpr.pagination_func(pair_wise_list,
+                                                                         number_of_elements_per_page,
+                                                                         page_number)}}})
                 if not responses:
                     responses.update({"error": "Please check the params"})
             except Exception as e:
@@ -174,7 +188,6 @@ class UkWebOpr(View):
         # At least user should send the order parameter
         else:
             responses.update({"error": "Please check the params"})
-
         return JsonResponse(responses, safe=False)
 
 # Bydefault pagnation will send the 10 elemets and 1st page
@@ -191,8 +204,12 @@ class UkWebOpr(View):
         collection_name = db['weather_data']
         if order and country and parameter:
             response = requests.get(
-                f"https://www.metoffice.gov.uk/pub/data/weather/uk/climate/datasets/{parameter}/{order}/{country}.txt")
-            collection_name.update_one({"country": country, "order": order, "parameter": parameter}, {"$set": {"country": country, "data": response.text, "order": order, "parameter": parameter}}, upsert=True)
+                f"https://www.metoffice.gov.uk/pub/data/weather/uk/climate/datasets/"
+                f"{parameter}/{order}/{country}.txt")
+            collection_name.update_one({"country": country, "order": order, "parameter": parameter},
+                                       {"$set": {"country": country, "data": response.text,
+                                                 "order": order, "parameter": parameter}},
+                                       upsert=True)
             return JsonResponse({"status" : "Document updated successfully"}, status=200)
         else:
             return JsonResponse({"status": "Please check the params"}, status=400)
