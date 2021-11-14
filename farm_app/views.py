@@ -195,4 +195,4 @@ class UkWebOpr(View):
             collection_name.update_one({"country": country, "order": order, "parameter": parameter}, {"$set": {"country": country, "data": response.text, "order": order, "parameter": parameter}}, upsert=True)
             return JsonResponse({"status" : "Document updated successfully"}, status=200)
         else:
-            return JsonResponse({"status": "Please check the params"}, status=200)
+            return JsonResponse({"status": "Please check the params"}, status=400)
